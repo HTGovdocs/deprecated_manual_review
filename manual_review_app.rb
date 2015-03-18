@@ -15,16 +15,20 @@ class LoginScreen < Sinatra::Base
   get('/login') { erb :login }
 
   post('/login') do
-    if `grep '#{params[:name]}:#{params[:password]}' .users`
-      session['user_name'] = params[:name]
-      redirect '/compare' 
-    else
-      redirect '/login'
+    open('.users').each do | line |
+      u, pw = line.chomp.split(':')
+      if params[:name] == u and params[:password] == pw
+        session['user_name'] = params[:name]
+        redirect '/compare' 
+      end
     end
+    #else
+    redirect '/login'
   end
 end
 
 class MrApp < Sinatra::Base
+  set :bind, '0.0.0.0'
   use LoginScreen
 
   before do
