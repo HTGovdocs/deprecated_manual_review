@@ -1,0 +1,5 @@
+<ul>
+  <% get_pairs.enumerate(limit_start) do | row | %>
+    <li><%= row[:id] %> <%= row[:review_count] %></li>
+  <% end %>
+</ul>

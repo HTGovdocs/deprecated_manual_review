@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/css/basic.css" type="text/css">
+</head>
+<body>
+<h2>These records are:</h2>
+<form name="compare" method="post">
+  <input type="hidden" name="pair_id" value="<%= pair_id %>">
+  <input type="radio" name="relationship" value="duplicates">Duplicates<br>
+  <input type="radio" name="relationship" value="related">Related<br>
+  <input type="radio" name="relationship" value="not_related">Not Related<br>
+  <input type="radio" name="relationship" value="unknown">Unknown<br>
+  <textarea name="note" placeholder="Notes"></textarea>
+  <input type="submit" name="form_submit" value="Submit">
+</form>
+<div id="left">
+  <p><label>Title:</label> <%= recs[:first_title] %></p>
+  <pre>
+  <code>
+  <%= JSON.pretty_generate(JSON.parse(recs[:first])) %>
+  </code>
+  </pre>
+</div>
+<div id="right">
+  <p><label>Title:</label> <%= recs[:second_title] %></p>
+  <pre>
+  <code>
+  <%= JSON.pretty_generate(JSON.parse(recs[:second])) %>
+  </code>
+  </pre>
+</div>
+</body>
+</html>
