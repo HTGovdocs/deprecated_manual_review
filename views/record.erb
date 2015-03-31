@@ -1,0 +1,40 @@
+<p><label>Title:</label> <%= extract_field_strs(rec, "245")[0] %></p>
+<% extract_field_strs(rec, "110").each do | f | %>
+  <p><label>Corporate Author:</label> <%= f %></p>
+<% end %> 
+<% extract_field_strs(rec, "100").each do | f | %>
+  <p><label>Author:</label> <%= f %></p>
+<% end %> 
+<% extract_field_strs(rec, "700").each do | f | %>
+  <p><label>Other Author:</label> <%= f %></p>
+<% end %> 
+<% extract_field_strs(rec, "710").each do | f | %>
+  <p><label>Other Author:</label> <%= f %></p>
+<% end %> 
+<% extract_field_strs(rec, "260").each do | f | %>
+  <p><label>Imprint:</label> <%= f %></p>
+<% end %> 
+<% extract_field_strs(rec, "010").each do | f | %>
+  <p><label>LCCN:</label> <%= f %></p>
+<% end %> 
+<% extract_field_strs(rec, "020").each do | f | %>
+  <p><label>ISBN:</label> <%= f %></p>
+<% end %> 
+<% extract_field_strs(rec, "022").each do | f | %>
+  <p><label>ISSN:</label> <%= f %></p>
+<% end %> 
+<% extract_field_strs(rec, "086").each do | f | %>
+  <p><label>SuDoc Number:</label> <%= f %></p>
+<% end %> 
+<% extract_field_strs(rec, "300").each do | f | %>
+  <p><label>Physical Description:</label> <%= f %></p>
+<% end %> 
+<% extract_field_strs(rec, "490").each do | f | %>
+  <p><label>Series Statement:</label> <%= f %></p>
+<% end %> 
+<pre>
+<code>
+<%= JSON.pretty_generate(rec) %>
+</code>
+</pre>
+
