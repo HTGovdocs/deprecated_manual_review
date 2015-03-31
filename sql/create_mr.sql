@@ -1,8 +1,8 @@
 use ht_repository;
 
--- Drop existing tables.
+/*-- Drop existing tables.
 --drop table if exists manual_reviews;
---drop table if exists mr_pairs;
+--drop table if exists mr_pairs;*/
 
 create table mr_pairs (
   id        INT          not null auto_increment,

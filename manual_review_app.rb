@@ -139,7 +139,7 @@ class MrApp < Sinatra::Base
     @@get_rec.enumerate(doc_id) do | row | #should just be one, unless I did something stupid
       fname = row[:file_path]
       lineno = row[:lineno] #should be line number
-     
+    
       line = `head -#{lineno} #{fname} | tail -1`
       #return JSON.parse(line)  
       line = line.split("\n")[0].chomp
