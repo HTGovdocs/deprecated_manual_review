@@ -9,6 +9,7 @@ create table mr_pairs (
   first_id  INT          not null,
   second_id INT          not null,
   relationship VARCHAR(50)  not null,
+  score DOUBLE not null,
   review_count INT not null DEFAULT 0,
   primary key (id),
   unique key pair (first_id, second_id)

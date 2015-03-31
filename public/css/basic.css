@@ -6,3 +6,8 @@ pre {
       white-space: pre-wrap;
       word-wrap: break-word; /* stupid ie9 */
     }
+
+table { border-collapse: collapse; }
+table, th, td { border: 2px solid #CCC; padding: .5em 1em; }
+
+nav { margin-bottom: 2em; }

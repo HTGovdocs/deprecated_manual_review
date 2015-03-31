@@ -1,5 +1,12 @@
-<ul>
+<%= erb :header %>
+<table>
+  <tr><th></th><th>Number of Reviews</th></tr>
   <% get_pairs.enumerate(limit_start) do | row | %>
-    <li><%= row[:id] %> <%= row[:review_count] %></li>
+    <tr>
+      <td><%= row[:id] %></td>
+      <td><a href="/reviews/<%= row[:id] %>"><%= row[:review_count] %></a></td>
+    </tr>
   <% end %>
-</ul>
+</table>
+<a href="/reviews?start=<%= limit_start.to_i+100 %>">Next 100</a>
+<%= erb :footer %>
