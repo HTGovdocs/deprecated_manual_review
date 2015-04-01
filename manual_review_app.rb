@@ -8,7 +8,7 @@ require 'erb'
 
 Dotenv.load
 
-class LoginScreen < Sinatra::Base
+class LoginScreen < Sinatra::Application
   #todo: noncrazy, nonstupid user auth
   enable :sessions
    
@@ -27,7 +27,7 @@ class LoginScreen < Sinatra::Base
   end
 end
 
-class MrApp < Sinatra::Base
+class MrApp < Sinatra::Application
   set :bind, '0.0.0.0'
   use LoginScreen
 
