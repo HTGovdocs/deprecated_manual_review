@@ -3,10 +3,13 @@ require 'sinatra/base'
 require 'json'
 require 'pp'
 require 'dotenv'
-require 'htph'
+require 'jdbc/mysql'
+require 'jdbc-helper'
 require 'erb'
 
 Dotenv.load
+BASEPATH = '/tb/htapps/jstever.babel/recordcomp'
+
 
 class LoginScreen < Sinatra::Application
   #todo: noncrazy, nonstupid user auth
@@ -29,17 +32,26 @@ end
 
 class MrApp < Sinatra::Application
   set :bind, '0.0.0.0'
-  use LoginScreen
+  #use LoginScreen
 
   before do
-    unless session['user_name']
-      redirect '/login'
-    end
+    Jdbc::MySQL.load_driver(:require)
+    env['PATH_INFO'].sub!(/^\/tb.*recordcomp/, '')
+    #unless session['user_name'] and 1==0
+    #  redirect 'recordcomp/login'
+    #end
   end
 
-  @@db = HTPH::Hathidb::Db.new();
-  @@conn = @@db.get_conn();
 
+  @@conn = JDBCHelper::Connection.new(
+    :driver             => Jdbc::MySQL.driver_name,
+    :url                => ENV['db_url'],
+    :user               => ENV['db_user'],
+    :password           => ENV['db_pw'],
+    :useCursorFetch     => 'true',
+    :defaultFetchSize   => 10000,
+  )
+=begin
   @@get_rec_sql = "SELECT hf.file_path, hg.lineno FROM hathi_gd hg 
                     LEFT JOIN hathi_input_file hf ON hg.file_id = hf.id
                    WHERE hg.id = ? LIMIT 1"
@@ -61,15 +73,17 @@ class MrApp < Sinatra::Application
 
   @@get_reviews_sql = "SELECT * from manual_reviews WHERE pair_id = ?"
   @@get_reviews = @@conn.prepare(@@get_reviews_sql)
+=end
 
   get '/' do
-    redirect to('/reviews')
+    #return env['PATH_INFO']
+    redirect to('recordcomp/reviews')
     "Manual review of government documents."
   end
 
   get '/review' do
     pair = get_next_pair
-    redirect to('/review/'+pair[:id].to_s) 
+    redirect to(BASEPATH'/review/'+pair[:id].to_s) 
   end
 
   get '/review/:pair_id' do |pair_id|
@@ -92,7 +106,7 @@ class MrApp < Sinatra::Application
                         params[:note],
                         session['user_name'])
     @@update_pair.execute(params[:pair_id])  
-    redirect to('/review')
+    redirect to('recordcomp/review')
   end
     
   get '/reviews/:pair_id' do |pair_id|
