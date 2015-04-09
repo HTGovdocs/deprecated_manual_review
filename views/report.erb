@@ -1,0 +1,21 @@
+<%= erb :header %>
+<h3>Week ending: <%= current_date %></h3>
+<table>
+  <tr>
+    <th>Reviewer</th>
+    <th>Relationship</th>
+    <th>Comments</th>
+    <th>Initial Score</th>
+    <th>Date/Time</th>
+  </tr>
+  <% reviews.each do | row | %>
+    <tr>
+      <td><%= row[:reviewer].capitalize %></td>
+      <td><a href="reviews/<%= row[:id] %>"><%= row[:relationship] %></a></td>
+      <td><%= row[:note] %></td>
+      <td><%= row[:score] %></td>
+      <td><%= row[:time_stamp] %></td>
+    </tr>
+  <% end %>
+</table>
+<%= erb :footer %>
