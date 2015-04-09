@@ -1,11 +1,12 @@
 <%= erb :header %>
 <h2>These records are:</h2>
+
 <form name="review" method="post">
   <input type="hidden" name="pair_id" value="<%= pair_id %>">
-  <input type="radio" name="relationship" value="duplicates">Duplicates<br>
-  <input type="radio" name="relationship" value="related">Related<br>
-  <input type="radio" name="relationship" value="not related">Not Related<br>
-  <input type="radio" name="relationship" value="unknown">Unknown<br>
+  <input type="radio" name="relationship" value="Duplicates">Duplicates<br>
+  <input type="radio" name="relationship" value="Related">Related<br>
+  <input type="radio" name="relationship" value="Not Related">Not Related<br>
+  <input type="radio" name="relationship" value="Unknown">Unknown<br>
   <textarea name="note" placeholder="Notes"></textarea>
   <input type="submit" name="form_submit" value="Submit">
 </form>

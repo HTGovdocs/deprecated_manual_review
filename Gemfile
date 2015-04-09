@@ -1,9 +1,8 @@
 source 'https://rubygems.org';
 
-gem 'activerecord-jdbcmysql-adapter'
 gem 'dotenv'
-gem 'jdbc-mysql'
-gem 'jdbc-helper'
+gem 'htph', :git => 'https://github.com/HTGovdocs/HTPH-rubygem.git';
 gem 'sinatra'
 gem 'httpclient'
+gem 'torquebox'
 

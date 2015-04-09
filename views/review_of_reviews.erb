@@ -1,7 +1,7 @@
 <%= erb :header %>
 <table>
   <tr><th>Decision</th><th>Notes</th><th>Reviewer</th></tr>
-  <% get_reviews.enumerate(pair_id) do | rev | %>
+  <% reviews.each do | rev | %>
     <tr>
       <td><%= rev[:relationship] %></td>
       <td><%= rev[:note] %></td>

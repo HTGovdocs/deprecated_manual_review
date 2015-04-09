@@ -1,129 +1,144 @@
 require 'sinatra'
 require 'sinatra/base'
 require 'json'
-require 'pp'
+require 'htph'
 require 'dotenv'
-require 'jdbc/mysql'
-require 'jdbc-helper'
+Dotenv.load()
 require 'erb'
-
-Dotenv.load
-BASEPATH = '/tb/htapps/jstever.babel/recordcomp'
+require 'torquebox'
 
 
-class LoginScreen < Sinatra::Application
-  #todo: noncrazy, nonstupid user auth
-  enable :sessions
-   
-  get('/login') { erb :login }
+class MrApp < Sinatra::Base
 
-  post('/login') do
-    open('.users').each do | line |
-      u, pw = line.chomp.split(':')
-      if params[:name] == u and params[:password] == pw
-        session['user_name'] = params[:name]
-        redirect '/review' 
-      end
-    end
-    #else
-    redirect '/login'
-  end
-end
+  use TorqueBox::Session::ServletStore, {
+    :key => 'sinatra_sessions',
+    :domain => 'hathitrust.org',
+    :path => '/recordcomp',
+    :httponly => true,
+  }
 
-class MrApp < Sinatra::Application
-  set :bind, '0.0.0.0'
-  #use LoginScreen
 
   before do
-    Jdbc::MySQL.load_driver(:require)
-    env['PATH_INFO'].sub!(/^\/tb.*recordcomp/, '')
-    #unless session['user_name'] and 1==0
-    #  redirect 'recordcomp/login'
-    #end
+    @@jdbc = HTPH::Hathijdbc::Jdbc.new();
+    @@conn = @@jdbc.get_conn();
+    if env['PATH_INFO'] !~ /login/ and !session['user_name'] 
+      redirect 'recordcomp/login'
+    end
   end
 
-
-  @@conn = JDBCHelper::Connection.new(
-    :driver             => Jdbc::MySQL.driver_name,
-    :url                => ENV['db_url'],
-    :user               => ENV['db_user'],
-    :password           => ENV['db_pw'],
-    :useCursorFetch     => 'true',
-    :defaultFetchSize   => 10000,
-  )
-=begin
   @@get_rec_sql = "SELECT hf.file_path, hg.lineno FROM hathi_gd hg 
                     LEFT JOIN hathi_input_file hf ON hg.file_id = hf.id
                    WHERE hg.id = ? LIMIT 1"
-  @@get_rec = @@conn.prepare(@@get_rec_sql)
-
   @@get_pair_sql = "SELECT id, first_id, second_id FROM mr_pairs WHERE id = ? LIMIT 1"
-  @@get_pair = @@conn.prepare(@@get_pair_sql)
 
   @@add_review_sql = "INSERT INTO manual_reviews (pair_id, relationship, note, reviewer)
                       VALUES (?, ?, ?, ?)"
-  @@add_review = @@conn.prepare(@@add_review_sql)
   
   @@update_pair_sql = "UPDATE mr_pairs SET review_count = review_count + 1 
                       WHERE id = ?"
-  @@update_pair = @@conn.prepare(@@update_pair_sql)
 
   @@get_pairs_sql = "SELECT * FROM mr_pairs WHERE review_count > 0 LIMIT ?, 100"
-  @@get_pairs = @@conn.prepare(@@get_pairs_sql)
 
   @@get_reviews_sql = "SELECT * from manual_reviews WHERE pair_id = ?"
-  @@get_reviews = @@conn.prepare(@@get_reviews_sql)
-=end
+
+  @@report_sql = "SELECT mr.*, mp.score FROM manual_reviews mr
+                  LEFT JOIN mr_pairs mp ON mr.pair_id = mp.id
+                  WHERE DATE_SUB(CURDATE(), INTERVAL 7 DAY) <= ts
+                  ORDER BY ts ASC"
+
+  get '/login' do
+    erb :login, :locals => {:uname=>session['user_name']} 
+  end
+
+  post '/login' do
+    open('.users').each do | line |
+      u, pw = line.chomp.split(':')
+      if params[:name].downcase == u and params[:password].downcase == pw
+        session['user_name'] = params[:name]
+        redirect 'recordcomp/review'
+      end
+    end
+    #else
+    redirect 'recordcomp/login'
+  end
 
   get '/' do
-    #return env['PATH_INFO']
-    redirect to('recordcomp/reviews')
+    redirect 'recordcomp/reviews'
     "Manual review of government documents."
   end
 
   get '/review' do
     pair = get_next_pair
-    redirect to(BASEPATH'/review/'+pair[:id].to_s) 
+    redirect 'recordcomp/review/'+pair.get_object('id').to_s 
   end
 
   get '/review/:pair_id' do |pair_id|
     recs = {}
-    @@get_pair.enumerate(pair_id) do | pair |
-      recs = get_recs( pair[:first_id], pair[:second_id] )
+    @@conn.prepared_select(@@get_pair_sql, [pair_id]) do | pair |
+      recs = get_recs( pair.get_object('first_id'), pair.get_object('second_id') )
     end
 
-    erb :review, :locals => {:pair_id=>pair_id, :recs=>recs }
-    #erb :review
+    erb :review, :locals => {:pair_id=>pair_id, :recs=>recs, :uname=>session['user_name'] }
   end
 
   post '/review/:pair_id' do |pi| #we'll use the form pair_id anyway
-    valid_relationships = ['unkown', 'duplicates', 'related', 'not related'] 
-    unless valid_relationships.include? params[:relationship] and session['user_name'] != ''
-      redirect to('/review/'+pi)
+    valid_relationships = ['Unkown', 'Duplicates', 'Related', 'Not Related'] 
+    unless valid_relationships.include? params[:relationship] #and session['user_name'] != ''
+      redirect 'recordcomp/review/'+pi
     end
-    @@add_review.execute(params[:pair_id],
-                        params[:relationship],
-                        params[:note],
-                        session['user_name'])
-    @@update_pair.execute(params[:pair_id])  
-    redirect to('recordcomp/review')
+    @@conn.prepared_update(@@add_review_sql, 
+                            [params[:pair_id],
+                            params[:relationship],
+                            params[:note],
+                            session['user_name']])
+    @@conn.prepared_update(@@update_pair_sql, [params[:pair_id]])  
+    redirect 'recordcomp/review'
   end
     
   get '/reviews/:pair_id' do |pair_id|
     recs = {}
-    @@get_pair.enumerate(pair_id) do | pair |
-      recs = get_recs( pair[:first_id], pair[:second_id] )
+    @@conn.prepared_select(@@get_pair_sql, [pair_id]) do | pair |
+      recs = get_recs( pair.get_object('first_id'), pair.get_object('second_id') )
     end
-    erb :review_of_reviews, :locals => {:get_reviews=>@@get_reviews, :pair_id=>pair_id, :recs=>recs }
+    reviews = []
+    @@conn.prepared_select(@@get_reviews_sql, [pair_id]) do | rev |
+      reviews << {:relationship=>rev.get_object('relationship'),
+                  :note=>rev.get_object('note'),
+                  :reviewer=>rev.get_object('reviewer')
+                 }
+    end
+    
+    erb :review_of_reviews, :locals => {:reviews=>reviews, 
+                                        :pair_id=>pair_id, :recs=>recs }
   end
  
   get '/reviews' do
     limit_start = if params[:start] then params[:start] else 0 end
+    pairs = []
+    @@conn.prepared_select(@@get_pairs_sql, [limit_start.to_i]) do | pair |
+      pairs << {:id=>pair.get_object('id'),
+                :review_count=>pair.get_object('review_count'),
+                :score=>pair.get_object('score')
+               }
+    end
+    erb :reviews, :locals => {:limit_start=>limit_start, 
+                              :pairs=>pairs}
+  end
 
-    erb :reviews, :locals => {:limit_start=>limit_start, :get_pairs=>@@get_pairs}
-    #@@get_pairs.enumerate(limit_start) do | row | 
-      
-    
+  get '/report' do
+    current_date = Time.now.strftime("%Y-%m-%d")
+    reviews = []
+    @@conn.prepared_select(@@report_sql) do | rev |
+      reviews << {:id=>rev.get_object('id'),
+                  :relationship=>rev.get_object('relationship'),
+                  :reviewer=>rev.get_object('reviewer'),
+                  :note=>rev.get_object('note'),
+                  :time_stamp=>rev.get_object('ts'),
+                  :score=>rev.get_object('score')
+                 }
+    end
+    erb :report, :locals => {:current_date=>current_date,
+                             :reviews=>reviews}
   end
 
   get '/record/:doc_id' do | doc_id |
@@ -135,7 +150,6 @@ class MrApp < Sinatra::Application
     begin
 #      return rec['fields'].select{|h| h.include? field}[0][field]["subfields"].collect{|s| s.values }.flatten.join(' ')
       return rec['fields'].select{|h| h.include? field}.collect{|f| f[field]['subfields'].collect{|sf| sf.values[0]}.join(' ')}
-      #PP.pp(f, STDERR)
       #return rec['fields'].select{|h| h.include? field}.collect{|f| f["subfields"].collect{|s| s.values }}.flatten.join(' ')
     rescue
       return []
@@ -144,17 +158,22 @@ class MrApp < Sinatra::Application
  
   def get_next_pair 
     count_sql = "SELECT id, first_id, second_id FROM mr_pairs ORDER BY review_count ASC LIMIT 1"
-    @@conn.query(count_sql) do |r|
+    @@conn.prepared_select(count_sql) do |r|
       return r
     end
   end
 
   def get_source_rec( doc_id )
-    @@get_rec.enumerate(doc_id) do | row | #should just be one, unless I did something stupid
-      fname = row[:file_path]
-      lineno = row[:lineno] #should be line number
+    @@conn.prepared_select(@@get_rec_sql, [doc_id]) do | row | #should just be one, unless I did something stupid
+      fname = row.get_object('file_path')
+      #kludge
+      if fname =~ /htdata.govdocs.marc.umich.umich_gov_doc_20130502.seq/ 
+        fname = '/htdata/govdocs/marc/umich/umich_parsed_2015_01_21.json'
+      end
+      lineno = row.get_object('lineno').to_i + 1 #line numbers seem to be off by 1
     
       line = `head -#{lineno} #{fname} | tail -1`
+      STDERR.puts 'what: '+lineno.to_s+' '+fname
       #return JSON.parse(line)  
       line = line.split("\n")[0].chomp
       return JSON.parse(line)

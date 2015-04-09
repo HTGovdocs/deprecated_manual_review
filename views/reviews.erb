@@ -1,13 +1,13 @@
 <%= erb :header %>
 <table>
   <tr><th></th><th>Number of Reviews</th><th>Initial Score</th></tr>
-  <% get_pairs.enumerate(limit_start) do | row | %>
+  <% pairs.each do | row | %>
     <tr>
       <td><%= row[:id] %></td>
-      <td><a href="/reviews/<%= row[:id] %>"><%= row[:review_count] %></a></td>
+      <td><a href="reviews/<%= row[:id] %>"><%= row[:review_count] %></a></td>
       <td><%= row[:score] %></td>
     </tr>
   <% end %>
 </table>
-<a href="/reviews?start=<%= limit_start.to_i+100 %>">Next 100</a>
+<a href="reviews?start=<%= limit_start.to_i+100 %>">Next 100</a>
 <%= erb :footer %>

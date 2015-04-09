@@ -1,3 +1,5 @@
-require 'jdbc-helper'
-require './manual_review_app'
-run MrApp
+require_relative 'manual_review_app'
+
+map '/' do
+  run MrApp
+end
