@@ -82,7 +82,7 @@ class MrApp < Sinatra::Base
   end
 
   post '/review/:pair_id' do |pi| #we'll use the form pair_id anyway
-    valid_relationships = ['Unkown', 'Duplicates', 'Related', 'Not Related'] 
+    valid_relationships = ['Unknown', 'Duplicates', 'Related', 'Not Related'] 
     unless valid_relationships.include? params[:relationship] #and session['user_name'] != ''
       redirect 'recordcomp/review/'+pi
     end
@@ -130,6 +130,7 @@ class MrApp < Sinatra::Base
     reviews = []
     @@conn.prepared_select(@@report_sql) do | rev |
       reviews << {:id=>rev.get_object('id'),
+                  :pair_id=>rev.get_object('pair_id'),
                   :relationship=>rev.get_object('relationship'),
                   :reviewer=>rev.get_object('reviewer'),
                   :note=>rev.get_object('note'),

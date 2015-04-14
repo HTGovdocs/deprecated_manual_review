@@ -11,7 +11,7 @@
   <% reviews.each do | row | %>
     <tr>
       <td><%= row[:reviewer].capitalize %></td>
-      <td><a href="reviews/<%= row[:id] %>"><%= row[:relationship] %></a></td>
+      <td><a href="reviews/<%= row[:pair_id] %>"><%= row[:relationship] %></a></td>
       <td><%= row[:note] %></td>
       <td><%= row[:score] %></td>
       <td><%= row[:time_stamp] %></td>
