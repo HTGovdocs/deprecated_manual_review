@@ -19,6 +19,8 @@ create table manual_reviews (
   id        INT         not null auto_increment,
   pair_id   INT         not null,
   relationship VARCHAR(50) not null,
+  first_gov_doc INT(1)   not null DEFAULT 1,
+  second_gov_doc INT(1)   not null DEFAULT 1,
   note TEXT not null DEFAULT '',
   reviewer VARCHAR(255) not null,
   ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

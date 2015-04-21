@@ -34,5 +34,5 @@ Explanation
 
 Reviews are performed on pairs of GovDoc records. The pairs that should be reviewed can be added to the mr_pairs table with load_pairs.rb. See the test data in the data directory for sample input. 
 
-Record ids and file names are pulled from the hathi_gd tables. Record ids are assumed to be line numbers. 
+Care should be taken to transfer GovDoc record ids from hathi_gd to the hathi_gd_static table in such a way that existing records are not disturbed. 
 

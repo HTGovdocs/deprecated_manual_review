@@ -26,13 +26,14 @@ class MrApp < Sinatra::Base
     end
   end
 
-  @@get_rec_sql = "SELECT hf.file_path, hg.lineno FROM hathi_gd hg 
+  @@get_rec_sql = "SELECT hf.file_path, hg.lineno FROM hathi_gd_static hg 
                     LEFT JOIN hathi_input_file hf ON hg.file_id = hf.id
                    WHERE hg.id = ? LIMIT 1"
   @@get_pair_sql = "SELECT id, first_id, second_id FROM mr_pairs WHERE id = ? LIMIT 1"
 
-  @@add_review_sql = "INSERT INTO manual_reviews (pair_id, relationship, note, reviewer)
-                      VALUES (?, ?, ?, ?)"
+  @@add_review_sql = "INSERT INTO manual_reviews (pair_id, relationship, note, 
+                                                  first_gov_doc, second_gov_doc, reviewer)
+                      VALUES (?, ?, ?, ?, ?, ?)"
   
   @@update_pair_sql = "UPDATE mr_pairs SET review_count = review_count + 1 
                       WHERE id = ?"
@@ -75,21 +76,28 @@ class MrApp < Sinatra::Base
   get '/review/:pair_id' do |pair_id|
     recs = {}
     @@conn.prepared_select(@@get_pair_sql, [pair_id]) do | pair |
-      recs = get_recs( pair.get_object('first_id'), pair.get_object('second_id') )
+      first_id = pair.get_object('first_id')
+      second_id = pair.get_object('second_id')
+      STDERR.puts 'pair: '+first_id.to_s+', '+second_id.to_s
+      recs = get_recs( first_id, second_id )
     end
 
     erb :review, :locals => {:pair_id=>pair_id, :recs=>recs, :uname=>session['user_name'] }
   end
 
   post '/review/:pair_id' do |pi| #we'll use the form pair_id anyway
-    valid_relationships = ['Unknown', 'Duplicates', 'Related', 'Not Related'] 
+    valid_relationships = ['Unknown', 'Duplicates', 'Duplicates, different media', 'Related', 'Not Related'] 
     unless valid_relationships.include? params[:relationship] #and session['user_name'] != ''
       redirect 'recordcomp/review/'+pi
     end
+    first_gov_doc = if params[:first_gov_doc] then 1 else 0 end
+    second_gov_doc = if params[:second_gov_doc] then 1 else 0 end
     @@conn.prepared_update(@@add_review_sql, 
                             [params[:pair_id],
                             params[:relationship],
                             params[:note],
+                            first_gov_doc,
+                            second_gov_doc,
                             session['user_name']])
     @@conn.prepared_update(@@update_pair_sql, [params[:pair_id]])  
     redirect 'recordcomp/review'
@@ -165,20 +173,17 @@ class MrApp < Sinatra::Base
   end
 
   def get_source_rec( doc_id )
+    line = '' 
     @@conn.prepared_select(@@get_rec_sql, [doc_id]) do | row | #should just be one, unless I did something stupid
       fname = row.get_object('file_path')
-      #kludge
-      if fname =~ /htdata.govdocs.marc.umich.umich_gov_doc_20130502.seq/ 
-        fname = '/htdata/govdocs/marc/umich/umich_parsed_2015_01_21.json'
-      end
+      
       lineno = row.get_object('lineno').to_i + 1 #line numbers seem to be off by 1
     
       line = `head -#{lineno} #{fname} | tail -1`
-      STDERR.puts 'what: '+lineno.to_s+' '+fname
-      #return JSON.parse(line)  
       line = line.split("\n")[0].chomp
-      return JSON.parse(line)
     end
+    if line == '' then line = '["source_missing"]' end
+    return JSON.parse(line)
   end
 
   def get_recs(first_id, second_id)

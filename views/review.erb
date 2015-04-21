@@ -4,16 +4,24 @@
 <form name="review" method="post">
   <input type="hidden" name="pair_id" value="<%= pair_id %>">
   <input type="radio" name="relationship" value="Duplicates">Duplicates<br>
+  <input type="radio" name="relationship" value="Duplicates, different media">Duplicates, different media<br>
   <input type="radio" name="relationship" value="Related">Related<br>
   <input type="radio" name="relationship" value="Not Related">Not Related<br>
   <input type="radio" name="relationship" value="Unknown">Unknown<br>
   <textarea name="note" placeholder="Notes"></textarea>
   <input type="submit" name="form_submit" value="Submit">
+  <div style="clear:both;"></div>
+  <div id="left">
+    <p>
+      <input type="checkbox" name="first_gov_doc" value="1" checked> United States Federal Document
+    </p>
+    <%= erb :record, :locals => {:rec=>recs[:first]} %>
+  </div>
+  <div id="right">
+    <p>
+      <input type="checkbox" name="second_gov_doc" value="1" checked> United States Federal Document
+    </p>
+    <%= erb :record, :locals => {:rec=>recs[:second]} %>
+  </div>
 </form>
-<div id="left">
-  <%= erb :record, :locals => {:rec=>recs[:first]} %>
-</div>
-<div id="right">
-  <%= erb :record, :locals => {:rec=>recs[:second]} %>
-</div>
 <%= erb :footer %>
