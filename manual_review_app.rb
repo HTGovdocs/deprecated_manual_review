@@ -27,7 +27,7 @@ class MrApp < Sinatra::Base
   end
 
   @@get_rec_sql = "SELECT hf.file_path, hg.lineno FROM hathi_gd_static hg 
-                    LEFT JOIN hathi_input_file hf ON hg.file_id = hf.id
+                    LEFT JOIN hathi_input_file_static hf ON hg.file_id = hf.id
                    WHERE hg.id = ? LIMIT 1"
   @@get_pair_sql = "SELECT id, first_id, second_id FROM mr_pairs WHERE id = ? LIMIT 1"
 
