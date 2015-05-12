@@ -166,8 +166,19 @@ class MrApp < Sinatra::Base
   end
  
   def get_next_pair 
-    count_sql = "SELECT id, first_id, second_id FROM mr_pairs ORDER BY review_count ASC LIMIT 1"
-    @@conn.prepared_select(count_sql) do |r|
+    #get number of mr_pairs
+    num_pairs = 0 
+    num_pairs_sql = "SELECT count(*) as num_pairs from mr_pairs"
+    @@conn.prepared_select(num_pairs_sql) do |r|
+      num_pairs = r.get_object('num_pairs')
+    end
+    
+    #originally this ensured we were getting a record with the lowest review_count. 
+    #With 3m pairs, it's more important that we get a random record
+    #count_sql = "SELECT id, first_id, second_id FROM mr_pairs ORDER BY review_count ASC LIMIT 1"
+    rand_num = rand(num_pairs)
+    rand_sql = "SELECT id, first_id, second_id FROM mr_pairs LIMIT ?,1"
+    @@conn.prepared_select(rand_sql, [rand_num]) do |r|
       return r
     end
   end
