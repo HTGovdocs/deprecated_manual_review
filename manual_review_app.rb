@@ -26,10 +26,10 @@ class MrApp < Sinatra::Base
     end
   end
 
-  @@get_rec_sql = "SELECT hf.file_path, hg.lineno FROM hathi_gd_static hg 
-                    LEFT JOIN hathi_input_file_static hf ON hg.file_id = hf.id
-                   WHERE hg.id = ? LIMIT 1"
-  @@get_pair_sql = "SELECT id, first_id, second_id FROM mr_pairs WHERE id = ? LIMIT 1"
+   @@get_rec_sql = "SELECT s.source, s.file_path FROM hathi_gd hg 
+                      LEFT JOIN gd_source_recs s ON s.file_input_id = hg.file_id AND s.line_number = hg.lineno
+                     WHERE hg.id = ? LIMIT 1"
+   @@get_pair_sql = "SELECT id, first_id, second_id FROM mr_pairs WHERE id = ? LIMIT 1"
 
   @@add_review_sql = "INSERT INTO manual_reviews (pair_id, relationship, note, 
                                                   first_gov_doc, second_gov_doc, reviewer)
@@ -185,13 +185,9 @@ class MrApp < Sinatra::Base
 
   def get_source_rec( doc_id )
     line = '' 
+
     @@conn.prepared_select(@@get_rec_sql, [doc_id]) do | row | #should just be one, unless I did something stupid
-      fname = row.get_object('file_path')
-      
-      lineno = row.get_object('lineno').to_i + 1 #line numbers seem to be off by 1
-    
-      line = `head -#{lineno} #{fname} | tail -1`
-      line = line.split("\n")[0].chomp
+      line = row.get_object('source').to_s
     end
     if line == '' then line = '["source_missing"]' end
     return JSON.parse(line)
