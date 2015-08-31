@@ -26,8 +26,8 @@ class MrApp < Sinatra::Base
     end
   end
 
-   @@get_rec_sql = "SELECT s.source, s.file_path FROM hathi_gd hg 
-                      LEFT JOIN gd_source_recs s ON s.file_input_id = hg.file_id AND s.line_number = hg.lineno
+   @@get_rec_sql = "SELECT s.source, s.file_path FROM hathi_gd_static hg 
+                      LEFT JOIN gd_source_recs_static s ON s.file_input_id = hg.file_id AND s.line_number = hg.lineno
                      WHERE hg.id = ? LIMIT 1"
    @@get_pair_sql = "SELECT id, first_id, second_id FROM mr_pairs WHERE id = ? LIMIT 1"
 
@@ -189,7 +189,7 @@ class MrApp < Sinatra::Base
     @@conn.prepared_select(@@get_rec_sql, [doc_id]) do | row | #should just be one, unless I did something stupid
       line = row.get_object('source').to_s
     end
-    if line == '' then line = '["source_missing"]' end
+    if line == '' then line = "[\"source_missing_#{doc_id}\"]" end
     return JSON.parse(line)
   end
 
